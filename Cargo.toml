@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
+env_logger = "0.11.3"
+log = "0.4.21"
 notify-rust = "4"
 reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }

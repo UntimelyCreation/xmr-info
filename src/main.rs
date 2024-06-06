@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
+use log::{debug, info};
 use notify_rust::Notification;
 use serde::Deserialize;
 use serde_json::Value;
@@ -49,6 +50,8 @@ struct NotifyBlockArgs {
 #[tokio::main]
 #[warn(clippy::pedantic)]
 async fn main() -> Result<(), anyhow::Error> {
+    env_logger::init();
+
     let args = Args::parse();
 
     match args.command {
@@ -96,13 +99,17 @@ async fn run_notify_block(args: NotifyBlockArgs) -> Result<(), anyhow::Error> {
         return Err(anyhow!("period must not be 0"));
     }
 
+    debug!(
+        "Fetching P2Pool{} block information every {} seconds",
+        if args.mini { " Mini" } else { "" },
+        args.period,
+    );
+
     let mut last_block_hash = get_current_block(args.mini).await?.hash;
 
     let mut interval = tokio::time::interval(Duration::from_secs(args.period));
     loop {
         interval.tick().await;
-        let mut stdout = io::stdout();
-        writeln!(stdout, "Fetching P2Pool block information...")?;
         let curr_block = get_current_block(args.mini).await?;
         if curr_block.hash != last_block_hash {
             last_block_hash = curr_block.hash;
@@ -115,7 +122,7 @@ async fn run_notify_block(args: NotifyBlockArgs) -> Result<(), anyhow::Error> {
                 .icon("monero")
                 .body(&format!("New block found at height {curr_block_height}"))
                 .show()?;
-            writeln!(stdout, "Block found, notification sent!")?;
+            info!("Block found at height {curr_block_height}, notification sent!");
         }
     }
 }
